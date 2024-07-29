@@ -1,3 +1,5 @@
+"""Module for listening and handling of trades from GMX_v2"""
+
 import time
 
 import ray
