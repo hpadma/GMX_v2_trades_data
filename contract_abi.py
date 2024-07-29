@@ -1,4 +1,5 @@
-# smart contract abi for gmx_v2
+"""smart contract abi for gmx_v2"""
+
 contract_abi = [{'inputs': [{'internalType': 'contract RoleStore',
                     'name': '_roleStore',
                     'type': 'address'}],
@@ -859,5 +860,5 @@ contract_abi = [{'inputs': [{'internalType': 'contract RoleStore',
                 'type': 'function'}]
 
 def abi():
-    '''Returns ABI of GMX_V2 smart contract'''
+    """Returns ABI of GMX_V2 smart contract"""
     return contract_abi
