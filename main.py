@@ -1,12 +1,13 @@
 """Module for listening and handling of trades from GMX_v2"""
 
+import asyncio
 import time
 
 import ray
 
 from contract_abi import abi
 from event_handler import handle_event
-from trades_handler import handle_trades, write_header
+from trades_handler import handle_trades
 from web3_utils import build_web3
 
 # Initiating ray for distributed computing
@@ -53,6 +54,7 @@ def get_trades(i):
                         time.sleep(0.1)
                 # Wait before retrying to avoid hitting rate limits
                 time.sleep(40)
+                print(j)
                 break
             except ValueError:
                 # Wait before retrying
@@ -64,11 +66,14 @@ def get_trades(i):
 tasks = [get_trades.remote(x) for x in range(110856764, 130554660, 3400000)]
 
 # Executing the remote tasks and gather the results
-all_trades = ray.get(tasks)
+trades_combined = ray.get(tasks)
 
-write_header()
 
-# Handling each trade data
-for trades in all_trades:
-    for trade_data in trades:
-        handle_trades(trade_data)
+async def handler(all_trades):
+    """Handling each trade data"""
+    for trades in all_trades:
+        for trade_data in trades:
+            await handle_trades(trade_data)
+
+
+asyncio.run(handler(trades_combined))

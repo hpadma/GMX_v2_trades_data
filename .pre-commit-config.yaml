@@ -19,6 +19,7 @@ repos:
     hooks:
       - id: pylint
         language: system
+        args: ['--disable=no-member']
   - repo: https://github.com/PyCQA/isort.git
     rev: 5.13.2
     hooks:

@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 COPY . /app/
 
-CMD ["python3.9", "__main__.py"]
+CMD ["sh", "-c", "prisma db push && prisma generate && python3.9 main.py"]

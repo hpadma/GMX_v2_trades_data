@@ -1,0 +1,44 @@
+
+generator client {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Trade {
+  id               Int      @id @default(autoincrement())
+  account          String
+  events           String
+  collateral_token String
+  token            String
+  collateral_amount Float
+  collateral_delta Float
+  size             Float
+  size_delta       Float
+  position_side    String
+  link             String
+  price            Float
+  block_number     Int
+  timestamp        Int
+  transaction_hash String
+  log_index        Int
+  pnl_usd          Float
+}
+
+model token_count{
+  id               Int      @id @default(autoincrement())
+  account          String
+  token            String
+  count            Int
+}
+
+model position_count{
+  id               Int      @id @default(autoincrement())
+  account          String
+  count            Int
+}

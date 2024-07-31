@@ -30,24 +30,24 @@ def pos_increase(event, timestamp, eventname):
     bool_items = data["boolItems"]["items"]
     bytes32_items = data["bytes32Items"]["items"]
 
-    trade_event = [
-        address_items[0]["value"],  # account
-        eventname,  # eventname
-        address_items[2]["value"],  # collateral_token
-        token_hash[address_items[1]["value"]],  # token
-        uint_items[2]["value"],  # collateral_amount
-        int_items[0]["value"],  # collateral_delta
-        uint_items[0]["value"],  # size
-        uint_items[12]["value"],  # size_delta
-        "LONG" if bool_items[0]["value"] else "SHORT",  # position_side
-        bytes32_items[1]["value"].hex(),  # link
-        uint_items[11]["value"],  # price
-        event["blockNumber"],  # block_number
-        timestamp,  # timestamp
-        event["transactionHash"].hex(),  # transaction_hash
-        event["logIndex"],  # log_index
-        0,  # pnl_usd
-    ]
+    trade_event = {
+        "account": address_items[0]["value"],
+        "events": eventname,
+        "collateral_token": address_items[2]["value"],
+        "token": token_hash[address_items[1]["value"]],
+        "collateral_amount": int(uint_items[2]["value"]) / 1e6,
+        "collateral_delta": int(int_items[0]["value"]) / 1e6,
+        "size": int(uint_items[0]["value"]) / 1e30,
+        "size_delta": int(uint_items[12]["value"]) / 1e30,
+        "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
+        "link": bytes32_items[1]["value"].hex(),
+        "price": int(uint_items[11]["value"]) / 1e30,
+        "block_number": event["blockNumber"],
+        "timestamp": timestamp,
+        "transaction_hash": event["transactionHash"].hex(),
+        "log_index": event["logIndex"],
+        "pnl_usd": 0,
+    }
 
     return trade_event
 
@@ -73,24 +73,24 @@ def pos_decrease(event, timestamp, eventname):
     bytes32_items = data["bytes32Items"]["items"]
     int_items = data["intItems"]["items"]
 
-    trade_event = [
-        address_items[0]["value"],  # account
-        eventname,  # eventname
-        address_items[2]["value"],  # collateral_token
-        token_hash[address_items[1]["value"]],  # token
-        uint_items[2]["value"],  # collateral_amount
-        uint_items[14]["value"],  # collateral_delta
-        uint_items[0]["value"],  # size
-        uint_items[12]["value"],  # size_delta
-        "LONG" if bool_items[0]["value"] else "SHORT",  # position_side
-        bytes32_items[1]["value"].hex(),  # link
-        uint_items[11]["value"],  # price
-        event["blockNumber"],  # block_number
-        timestamp,  # timestamp
-        event["transactionHash"].hex(),  # transaction_hash
-        event["logIndex"],  # log_index
-        int_items[1]["value"],  # pnl_usd
-    ]
+    trade_event = {
+        "account": address_items[0]["value"],
+        "events": eventname,
+        "collateral_token": address_items[2]["value"],
+        "token": token_hash[address_items[1]["value"]],
+        "collateral_amount": uint_items[2]["value"] / 1e6,
+        "collateral_delta": uint_items[14]["value"] / 1e6,
+        "size": uint_items[0]["value"] / 1e30,
+        "size_delta": uint_items[12]["value"] / 1e30,
+        "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
+        "link": bytes32_items[1]["value"].hex(),
+        "price": uint_items[11]["value"] / 1e30,
+        "block_number": event["blockNumber"],
+        "timestamp": timestamp,
+        "transaction_hash": event["transactionHash"].hex(),
+        "log_index": event["logIndex"],
+        "pnl_usd": int_items[1]["value"] / 1e30,
+    }
 
     return trade_event
 
@@ -115,24 +115,24 @@ def liquidated(event, timestamp):
     bytes32_items = data["bytes32Items"]["items"]
     int_items = data["intItems"]["items"]
 
-    trade_event = [
-        address_items[0]["value"],  # account
-        "Liquidated",  # eventname
-        address_items[2]["value"],  # collateral_token
-        token_hash[address_items[1]["value"]],  # token
-        uint_items[2]["value"],  # collateral_amount
-        uint_items[14]["value"],  # collateral_delta
-        uint_items[0]["value"],  # size
-        uint_items[12]["value"],  # size_delta
-        "LONG" if bool_items[0]["value"] else "SHORT",  # position_side
-        bytes32_items[1]["value"].hex(),  # link
-        uint_items[11]["value"],  # price
-        event["blockNumber"],  # block_number
-        timestamp,  # timestamp
-        event["transactionHash"].hex(),  # transaction_hash
-        event["logIndex"],  # log_index
-        int_items[1]["value"],  # pnl_usd
-    ]
+    trade_event = {
+        "account": address_items[0]["value"],
+        "events": "Liquidated",
+        "collateral_token": address_items[2]["value"],
+        "token": token_hash[address_items[1]["value"]],
+        "collateral_amount": uint_items[2]["value"] / 1e6,
+        "collateral_delta": uint_items[14]["value"] / 1e6,
+        "size": uint_items[0]["value"] / 1e30,
+        "size_delta": uint_items[12]["value"] / 1e30,
+        "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
+        "link": bytes32_items[1]["value"].hex(),
+        "price": uint_items[11]["value"] / 1e30,
+        "block_number": event["blockNumber"],
+        "timestamp": timestamp,
+        "transaction_hash": event["transactionHash"].hex(),
+        "log_index": event["logIndex"],
+        "pnl_usd": int_items[1]["value"] / 1e30,
+    }
 
     return trade_event
 

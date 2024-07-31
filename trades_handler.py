@@ -1,50 +1,14 @@
-"""Module for handling the trades and writing into CSV file"""
+"""Module for handling the trades and writing into database"""
 
-import csv
+from prisma.errors import PrismaError
 
-# Stores the position count of all links
-position_count = {}
-# Stores the latest position count of links for each tokens
-token_position = {"WBTC": {}, "WETH": {}, "LINK": {}, "UNI": {}}
+from prisma import Prisma
 
-
-def write_header():
-    """Writes the header row to the CSV file when initiating the CSV File."""
-    with open("trades.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        header = [
-            "account",
-            "events",
-            "collateral_token",
-            "token",
-            "collateral_amount",
-            "collateral_delta",
-            "size",
-            "size_delta",
-            "position_side",
-            "link",
-            "price",
-            "block_number",
-            "timestamp",
-            "transaction_hash",
-            "log_index",
-            "pnl_usd",
-        ]
-        writer.writerow(header)
+# Initialize Prisma client
+prisma = Prisma()
 
 
-def write(trade_data):
-    """
-    Appends a row of trade to the CSV file.
-    Args:
-        trade_data: List containing trade information to be written to the CSV file.
-    """
-    with open("trades.csv", "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(trade_data)
-
-
-def counter(trade_data):
+async def counter(trade_data):
     """
     Updates and returns the postion link count for each account.
     Args:
@@ -52,32 +16,86 @@ def counter(trade_data):
     Returns:
         int: Position count of link
     """
-    events = trade_data[1]
-    token = trade_data[3]
-    position_link = trade_data[9]
+    events = trade_data["events"]
+    token = trade_data["token"]
+    account = trade_data["account"]
 
     # For the event Open increase the position link count else return present count
     if events == "Open":
         # Increase the count if link already exist else intiatiate it with 1
-        if position_link in position_count:
-            position_count[position_link] += 1
-            token_position[token][position_link] = position_count[position_link]
-        else:
-            position_count[position_link] = 1
-            token_position[token][position_link] = position_count[position_link]
+        try:
+            pos_data = await prisma.position_count.find_first_or_raise(
+                where={"account": account}
+            )
+            new_count = pos_data.count + 1
+            try:
+                data = await prisma.token_count.find_first_or_raise(
+                    where={"account": account, "token": token}
+                )
+                await prisma.token_count.update_many(
+                    where={"account": account, "token": token},
+                    data={"count": new_count},
+                )
+            except PrismaError:
+                data = {"account": account, "token": token, "count": new_count}
+                await prisma.token_count.create(data=data)
+            finally:
+                await prisma.position_count.update_many(
+                    where={"account": account}, data={"count": new_count}
+                )
+            return new_count
+        except PrismaError:
+            pos_data = {"account": account, "count": 1}
+            data = {"account": account, "token": token, "count": 1}
+            await prisma.token_count.create(data=data)
+            await prisma.position_count.create(data=pos_data)
+            return 1
+
     else:
-        token_position[token][position_link] = position_count[position_link]
-    return position_count[position_link]
+        try:
+            data = await prisma.token_count.find_first_or_raise(
+                where={"account": account, "token": token}
+            )
+            return data.count
+        except PrismaError:
+            print("No open position for the Trade found")
+            return None
 
 
-def handle_trades(trade_data):
+async def write(trade_data):
     """
-    Updates the position link and writes the trade data to the CSV file.
+    Appends a row of trade to the database.
+    Args:
+        trade_data: List containing trade information to be written to the database.
+    """
+    link_counter = await counter(trade_data)
+    if link_counter is not None:
+        trade_data["link"] = (
+            "PositionLink_" + str(link_counter) + "_0x" + str(trade_data["link"])
+        )
+        await prisma.trade.create(data=trade_data)
+
+
+async def handle_trades(trade_data):
+    """
+    Updates the position link and writes the trade data to the database.
     Args:
         trade_data: List containing trade information.
     """
-    # Get the updated position link count
-    link_counter = counter(trade_data)
-    # Change the format of link and update in CSV file
-    trade_data[9] = "PositionLink_" + str(link_counter) + "_0x" + str(trade_data[9])
-    write(trade_data)
+    try:
+        await prisma.connect()
+
+        # Find trades with the specified transaction hash
+        trade = await prisma.trade.find_many(
+            where={"transaction_hash": trade_data["transaction_hash"]}
+        )
+
+        if trade == []:
+            await write(trade_data)
+            print("Trade added successfully")
+        else:
+            print("Trade already exist")
+    except PrismaError as e:
+        print(f"An error occurred: {e}")
+    finally:
+        await prisma.disconnect()
