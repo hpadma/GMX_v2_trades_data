@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Trade {
+model trade{
   id               Int      @id @default(autoincrement())
   account          String
   events           String
@@ -41,4 +41,9 @@ model position_count{
   id               Int      @id @default(autoincrement())
   account          String
   count            Int
+}
+
+model block{
+  id               Int      @id @default(autoincrement())
+  last_update      Int
 }
