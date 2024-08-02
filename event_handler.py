@@ -20,7 +20,8 @@ def pos_increase(event, timestamp, eventname):
         list: Relevant information from the event data.
     """
     # Extracting event data fields into a single dictionary
-    print(f"inc, {event['blockNumber']}")
+    # uncomment if you want to print the present processing block number
+    # print(f"inc, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction
@@ -63,7 +64,8 @@ def pos_decrease(event, timestamp, eventname):
         list: Relevant information from the event data.
     """
     # Extracting event data fields into a single dictionary
-    print(f"dec, {event['blockNumber']}")
+    # uncomment if you want to print the present processing block number
+    # print(f"dec, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction
@@ -105,7 +107,8 @@ def liquidated(event, timestamp):
         list: Relevant information from the event data.
     """
     # Extracting event data fields into a single dictionary
-    print(f"liq, {event['blockNumber']}")
+    # uncomment if you want to print the present processing block number
+    # print(f"liq, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction

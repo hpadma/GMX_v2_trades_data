@@ -5,11 +5,13 @@ import random
 import time
 
 import ray
+from requests.exceptions import RequestException
 
 from contract_abi import abi
 from event_handler import handle_event
 from prisma import Prisma
 from trades_handler import handle_trades
+from web3_proxy import add_case, pick_uri, uri_not_working
 from web3_utils import build_web3
 
 providers = [
@@ -39,10 +41,11 @@ def get_trades(i, total):
     """
     data = []
     # Defining the provider URL for connecting to the Arbitrum network
-    for j in range(i, i + total, 50000):
-        provider_url = random.choice(providers)
+    j = i
+    while j < i + total:
+        provider_index = pick_uri()
         # Building a Web3 instance
-        w3 = build_web3(provider_url)
+        w3 = build_web3(providers[provider_index])
 
         # Creating a GMX_V2 contract instance
         contract_abi = abi()
@@ -64,10 +67,16 @@ def get_trades(i, total):
                         data.append(trade)
                         # Waiting to avoid hitting rate limits
                         time.sleep(0.1)
+                add_case(provider_index, "Success")
+                j += 50000
                 break
             except ValueError:
                 # Wait before retrying
+                add_case(provider_index, "Fail")
                 time.sleep(1)
+            except RequestException:
+                uri_not_working(provider_index)
+                break
     return data
 
 
@@ -87,7 +96,6 @@ async def get_last_updated_block():
             )
         else:
             last_update_block = 110856764
-    print(last_update_block)
     await prisma.disconnect()
     return last_update_block
 
