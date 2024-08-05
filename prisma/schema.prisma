@@ -32,14 +32,14 @@ model trade{
 
 model token_count{
   id               Int      @id @default(autoincrement())
-  account          String
+  link          String
   token            String
   count            Int
 }
 
 model position_count{
   id               Int      @id @default(autoincrement())
-  account          String
+  link          String
   count            Int
 }
 

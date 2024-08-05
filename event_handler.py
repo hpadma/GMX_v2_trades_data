@@ -31,18 +31,23 @@ def pos_increase(event, timestamp, eventname):
     bool_items = data["boolItems"]["items"]
     bytes32_items = data["bytes32Items"]["items"]
 
+    if token_hash[address_items[1]["value"]] == "WBTC":
+        price = uint_items[7]["value"] / 1e22
+    else:
+        price = uint_items[7]["value"] / 1e12
+
     trade_event = {
         "account": address_items[0]["value"],
         "events": eventname,
         "collateral_token": address_items[2]["value"],
         "token": token_hash[address_items[1]["value"]],
-        "collateral_amount": uint_items[2]["value"] / 1e6,
-        "collateral_delta": int_items[0]["value"] / 1e6,
+        "collateral_amount": uint_items[2]["value"] * uint_items[10]["value"] / 1e30,
+        "collateral_delta": int_items[0]["value"] * uint_items[10]["value"] / 1e30,
         "size": uint_items[0]["value"] / 1e30,
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": uint_items[11]["value"] / 1e30,
+        "price": price,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),
@@ -75,18 +80,23 @@ def pos_decrease(event, timestamp, eventname):
     bytes32_items = data["bytes32Items"]["items"]
     int_items = data["intItems"]["items"]
 
+    if token_hash[address_items[1]["value"]] == "WBTC":
+        price = uint_items[7]["value"] / 1e22
+    else:
+        price = uint_items[7]["value"] / 1e12
+
     trade_event = {
         "account": address_items[0]["value"],
         "events": eventname,
         "collateral_token": address_items[2]["value"],
         "token": token_hash[address_items[1]["value"]],
-        "collateral_amount": uint_items[2]["value"] / 1e6,
-        "collateral_delta": uint_items[14]["value"] / 1e6,
+        "collateral_amount": uint_items[2]["value"] * uint_items[10]["value"] / 1e30,
+        "collateral_delta": uint_items[14]["value"] * uint_items[10]["value"] / 1e30,
         "size": uint_items[0]["value"] / 1e30,
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": uint_items[11]["value"] / 1e30,
+        "price": price,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),
@@ -118,18 +128,23 @@ def liquidated(event, timestamp):
     bytes32_items = data["bytes32Items"]["items"]
     int_items = data["intItems"]["items"]
 
+    if token_hash[address_items[1]["value"]] == "WBTC":
+        price = uint_items[7]["value"] / 1e22
+    else:
+        price = uint_items[7]["value"] / 1e12
+
     trade_event = {
         "account": address_items[0]["value"],
         "events": "Liquidated",
         "collateral_token": address_items[2]["value"],
         "token": token_hash[address_items[1]["value"]],
-        "collateral_amount": uint_items[2]["value"] / 1e6,
-        "collateral_delta": uint_items[14]["value"] / 1e6,
+        "collateral_amount": uint_items[2]["value"] * uint_items[10]["value"] / 1e30,
+        "collateral_delta": uint_items[14]["value"] * uint_items[10]["value"] / 1e30,
         "size": uint_items[0]["value"] / 1e30,
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": uint_items[11]["value"] / 1e30,
+        "price": price,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),

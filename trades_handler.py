@@ -23,7 +23,7 @@ prisma = Prisma()
 
 async def counter(trade_data):
     """
-    Updates and returns the position link count for each account.
+    Updates and returns the position link count for each link.
     Args:
         trade_data: List containing trade information.
     Returns:
@@ -31,37 +31,37 @@ async def counter(trade_data):
     """
     events = trade_data["events"]
     token = trade_data["token"]
-    account = trade_data["account"]
+    link = trade_data["link"]
 
     if events == "Open":
         try:
             pos_data = await prisma.position_count.find_first_or_raise(
-                where={"account": account}
+                where={"link": link}
             )
             new_count = pos_data.count + 1
             try:
                 await prisma.token_count.update_many(
-                    where={"account": account, "token": token},
+                    where={"link": link, "token": token},
                     data={"count": new_count},
                 )
             except PrismaError:
-                data = {"account": account, "token": token, "count": new_count}
+                data = {"link": link, "token": token, "count": new_count}
                 await prisma.token_count.create(data=data)
             finally:
                 await prisma.position_count.update_many(
-                    where={"account": account}, data={"count": new_count}
+                    where={"link": link}, data={"count": new_count}
                 )
             return new_count
         except PrismaError:
-            pos_data = {"account": account, "count": 1}
-            data = {"account": account, "token": token, "count": 1}
+            pos_data = {"link": link, "count": 1}
+            data = {"link": link, "token": token, "count": 1}
             await prisma.token_count.create(data=data)
             await prisma.position_count.create(data=pos_data)
             return 1
     else:
         try:
             data = await prisma.token_count.find_first_or_raise(
-                where={"account": account, "token": token}
+                where={"link": link, "token": token}
             )
             return data.count
         except PrismaError:
