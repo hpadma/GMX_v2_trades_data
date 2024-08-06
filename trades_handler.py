@@ -1,21 +1,9 @@
 """Module for handling the trades and writing into database"""
 
-import logging
-
 from prisma.errors import PrismaError
 
+from logger import log_message
 from prisma import Prisma
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="{asctime} - {levelname} - {message}",
-    style="{",
-    datefmt="%Y-%m-%d %H:%M",
-)
-
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("http.client").setLevel(logging.WARNING)
 
 # Initialize Prisma client
 prisma = Prisma()
@@ -65,7 +53,8 @@ async def counter(trade_data):
             )
             return data.count
         except PrismaError:
-            logging.warning(
+            log_message(
+                "warning",
                 "Missing Open position of trade with transaction hash %s and log index %s.",
                 trade_data["transaction_hash"],
                 trade_data["log_index"],
@@ -108,17 +97,21 @@ async def handle_trades(all_trades, last_block):
                         )
                         if not trade:
                             await write(trade_data)
-                            logging.info(
-                                "Trade added successfully with data: %s.", trade_data
+                            log_message(
+                                "info",
+                                "Trade added successfully with data: %s.",
+                                trade_data,
                             )
                         else:
-                            logging.info(
+                            log_message(
+                                "info",
                                 "Trade already exists for transaction hash %s and log index %s.",
                                 trade_data["transaction_hash"],
                                 trade_data["log_index"],
                             )
                 except PrismaError as e:
-                    logging.error(
+                    log_message(
+                        "error",
                         "An error occurred with transaction hash %s and log index %s: %s",
                         trade_data["transaction_hash"],
                         trade_data["log_index"],
@@ -127,8 +120,8 @@ async def handle_trades(all_trades, last_block):
         await prisma.block.update_many(
             where={"id": 1}, data={"last_update": last_block}
         )
-        logging.info("Last synced block %d", last_block - 1)
+        log_message("info", "Last synced block %d", last_block - 1)
     except PrismaError as e:
-        logging.error("An error occurred: %s", e)
+        log_message("error", "An error occurred: %s", e)
     finally:
         await prisma.disconnect()

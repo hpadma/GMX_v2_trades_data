@@ -13,14 +13,17 @@ Listen for GMX_v2 trade events of WETH,WBTC,LINK,UNI tokens.
 3. Then save it into the CSV file.
 
 ## Components:
-### __main__.py :
+### main.py :
   Initiates a ray and listens to the blocks parallely.
 ### web3_utils.py :
   Creates a Web3 instance using the given HTTP provider URL.
+### web3_proxy.py:
+  Handles the performance of URI and returns the best performed URI.
 ### contract_abi.py :
   Returns the smart contract ABI of GMX_v2.
 ### event_handler.py :
   Handles the event and returns the data of relavant event in formatted manner.
 ### trades_handler.py :
   Updates the position link and writes the trade data to the CSV file.
-
+### logger.py :
+  Adds the event to the log file.

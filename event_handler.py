@@ -1,5 +1,7 @@
 """Module for filtering the events"""
 
+from logger import log_message
+
 # Mapping token addresses to their token names
 token_hash = {
     "0x47c031236e19d024b42f8AE6780E44A573170703": "WBTC",
@@ -19,9 +21,9 @@ def pos_increase(event, timestamp, eventname):
     Returns:
         list: Relevant information from the event data.
     """
+    log_message("debug", "Event:%s, Block number: %s", eventname, event["blockNumber"])
+
     # Extracting event data fields into a single dictionary
-    # uncomment if you want to print the present processing block number
-    # print(f"inc, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction
@@ -68,9 +70,9 @@ def pos_decrease(event, timestamp, eventname):
     Returns:
         list: Relevant information from the event data.
     """
+    log_message("debug", "Event:%s, Block number: %s", eventname, event["blockNumber"])
+
     # Extracting event data fields into a single dictionary
-    # uncomment if you want to print the present processing block number
-    # print(f"dec, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction
@@ -116,9 +118,9 @@ def liquidated(event, timestamp):
     Returns:
         list: Relevant information from the event data.
     """
+    log_message("debug", "Event: Liquidation, Block number: %s", event["blockNumber"])
+
     # Extracting event data fields into a single dictionary
-    # uncomment if you want to print the present processing block number
-    # print(f"liq, {event['blockNumber']}")
     data = event["args"]["eventData"]
 
     # Simplified data extraction
