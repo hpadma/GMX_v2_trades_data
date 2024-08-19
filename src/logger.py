@@ -12,7 +12,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Create a file handler for the log file
-file_handler = logging.FileHandler("application.log")
+file_handler = logging.FileHandler("logs/application.log")
 file_handler.setLevel(logging.INFO)
 
 # Create a formatter and set it for the file handler

@@ -13,4 +13,4 @@ RUN poetry config virtualenvs.create false && poetry install --no-root
 
 COPY . /app/
 
-CMD ["sh", "-c", "prisma db push && prisma generate && python3.9 main.py"]
+CMD ["sh", "-c", "prisma db push && prisma generate && python3.9 src/main.py"]

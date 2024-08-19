@@ -23,27 +23,125 @@ model trade{
   position_side    String
   link             String
   price            Float
+  fee              Float
   block_number     Int
   timestamp        Int
+  pnl_usd          Float
   transaction_hash String
   log_index        Int
-  pnl_usd          Float
 }
 
 model token_count{
   id               Int      @id @default(autoincrement())
-  link          String
+  link             String
   token            String
   count            Int
 }
 
 model position_count{
   id               Int      @id @default(autoincrement())
-  link          String
+  link             String
   count            Int
 }
 
 model block{
   id               Int      @id @default(autoincrement())
   last_update      Int
+}
+
+model position_unsettled{
+  id               Int      @id @default(autoincrement())
+  cummulative_fee  Float
+  max_size         Float
+  max_collateral   Float
+  open_blocknumber Int
+  open_blocktimestamp     Int
+  last_increase_timestamp Int?
+  last_decrease_timestamp Int?
+  number_of_increase      Int
+  number_of_decrease      Int
+  size_of_increase        Float?
+  average_open_price      Float?
+  size_of_decrease        Float?
+  average_close_price     Float?
+  last_decreased_index_token_price_min      Float?
+  last_decreased_index_token_price_max      Float?
+  last_increased_index_token_price_min      Float?
+  last_increased_index_token_price_max      Float?
+  last_decreased_collateral_token_price_min Float?
+  last_decreased_collateral_token_price_max Float?
+  last_increased_collateral_token_price_min Float?
+  last_increased_collateral_token_price_max Float?
+  index_token_open_price_min                Float
+  index_token_open_price_max                Float
+  link                                      String
+}
+
+model position_settled{
+  id               Int      @id @default(autoincrement())
+  link             String
+  account          String
+  collateral_token String
+  market_token     String
+  token            String
+  long_token       String
+  short_token      String
+  position_side    String
+  key              String
+  index_token_decimal            Int
+  long_token_decimal             Int
+  short_token_decimal            Int
+  index_token_gmx_decimal        Int
+  long_token_gmx_decimal         Int
+  short_token_gmx_decimal        Int
+  collateral_token_gmx_decimal   Int
+  collateral_token_decimal       Int
+  cummulative_size_in_usd         Float
+  cummulative_size_in_token       Float
+  cummulative_collateral          Float
+  cummulative_fee                 Float
+  size_in_usd                    Float
+  size_in_token                  Float
+  collateral_in_usd              Float
+  max_size                       Float
+  max_collateral                 Float
+  open_block_number              Int
+  open_block_timestamp           Int
+  block_number                   Int
+  block_timestamp                Int
+  last_increased_timestamp       Int?
+  last_decreased_timestamp       Int?
+  number_of_increase             Int
+  number_of_decrease             Int
+  last_decreased_index_token_price_min      Float?
+  last_decreased_index_token_price_max      Float?
+  last_increased_index_token_price_min      Float?
+  last_increased_index_token_price_max      Float?
+  last_decreased_collateral_token_price_min Float?
+  last_decreased_collateral_token_price_max Float?
+  last_increased_collateral_token_price_min Float?
+  last_increased_collateral_token_price_max Float?
+  average_open_price             Float
+  average_close_price            Float
+  settled_price                  Float
+  is_liquidated                  Boolean
+  price_impact_usd               Float
+  base_pnl_usd                   Float
+  uncapped_base_pnl_usd          Float
+  index_token_price_max          Float
+  index_token_price_min          Float
+  collateral_token_price_max     Float
+  collateral_token_price_min     Float
+  index_token_open_price_min     Float
+  index_token_open_price_max     Float
+  size_updated_at                Int
+  funding_fee_amount             Float
+  position_fee_amount            Float
+  borrowing_fee_amount           Float
+  ui_fee_amount                  Float
+  trader_discount_amount         Float
+  total_fee_amount               Float
+  fees_updated_at                Int
+  transaction_hash               String
+  log_index                      Int
 }

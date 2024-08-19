@@ -34,9 +34,9 @@ def pos_increase(event, timestamp, eventname):
     bytes32_items = data["bytes32Items"]["items"]
 
     if token_hash[address_items[1]["value"]] == "WBTC":
-        price = uint_items[7]["value"] / 1e22
+        price_factor = 1e22
     else:
-        price = uint_items[7]["value"] / 1e12
+        price_factor = 1e12
 
     trade_event = {
         "account": address_items[0]["value"],
@@ -49,7 +49,8 @@ def pos_increase(event, timestamp, eventname):
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": price,
+        "price": uint_items[7]["value"] / price_factor,
+        "fee": (uint_items[7]["value"] - uint_items[8]["value"]) / price_factor,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),
@@ -70,6 +71,7 @@ def pos_decrease(event, timestamp, eventname):
     Returns:
         list: Relevant information from the event data.
     """
+
     log_message("debug", "Event:%s, Block number: %s", eventname, event["blockNumber"])
 
     # Extracting event data fields into a single dictionary
@@ -83,9 +85,9 @@ def pos_decrease(event, timestamp, eventname):
     int_items = data["intItems"]["items"]
 
     if token_hash[address_items[1]["value"]] == "WBTC":
-        price = uint_items[7]["value"] / 1e22
+        price_factor = 1e22
     else:
-        price = uint_items[7]["value"] / 1e12
+        price_factor = 1e12
 
     trade_event = {
         "account": address_items[0]["value"],
@@ -98,7 +100,8 @@ def pos_decrease(event, timestamp, eventname):
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": price,
+        "price": uint_items[7]["value"] / price_factor,
+        "fee": (uint_items[7]["value"] - uint_items[8]["value"]) / price_factor,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),
@@ -131,9 +134,9 @@ def liquidated(event, timestamp):
     int_items = data["intItems"]["items"]
 
     if token_hash[address_items[1]["value"]] == "WBTC":
-        price = uint_items[7]["value"] / 1e22
+        price_factor = 1e22
     else:
-        price = uint_items[7]["value"] / 1e12
+        price_factor = 1e12
 
     trade_event = {
         "account": address_items[0]["value"],
@@ -146,7 +149,8 @@ def liquidated(event, timestamp):
         "size_delta": uint_items[12]["value"] / 1e30,
         "position_side": "LONG" if bool_items[0]["value"] else "SHORT",
         "link": bytes32_items[1]["value"].hex(),
-        "price": price,
+        "price": uint_items[7]["value"] / price_factor,
+        "fee": (uint_items[7]["value"] - uint_items[8]["value"]) / price_factor,
         "block_number": event["blockNumber"],
         "timestamp": timestamp,
         "transaction_hash": event["transactionHash"].hex(),

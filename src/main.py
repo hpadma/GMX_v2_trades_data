@@ -1,25 +1,25 @@
 """Module for listening and handling of trades from GMX_v2"""
 
 import asyncio
-import random
 import time
 
 import ray
-from requests.exceptions import RequestException
+from requests.exceptions import HTTPError
 
 from contract_abi import abi
-from event_handler import handle_event
+from handlers.addition_data_handler import handle_position
+from handlers.event_handler import handle_event
+from handlers.trades_handler import handle_trades
 from prisma import Prisma
-from trades_handler import handle_trades
-from web3_proxy import add_case, pick_uri, uri_not_working
-from web3_utils import build_web3
+from web3_manager.proxy import add_case, pick_uri, uri_not_working
+from web3_manager.utils import build_web3
 
 providers = [
     "https://arbitrum-one-rpc.publicnode.com",
     "https://arbitrum-one.publicnode.com",
     "https://arb-pokt.nodies.app",
     "https://arbitrum.meowrpc.com",
-    "https://public.stackup.sh/api/v1/node/arbitrum-one",
+    "https://open-platform.nodereal.io/c519f6b2fce14790aef78c1693420d0e/arbitrum-nitro/",
 ]
 
 # Initiating ray for distributed computing
@@ -27,6 +27,22 @@ ray.init()
 
 # Initialize Prisma client
 prisma = Prisma()
+
+
+def process_events(all_events, data, w3):
+    """
+    Processes events and appends trades and positions to data.
+    Args:
+        events: List of events to process.
+        data: List to which trades and positions will be appended.
+    """
+    for k, event in enumerate(all_events):
+        if event["args"]["eventName"] == "PositionFeesCollected":
+            trade = handle_event(all_events[k + 1], w3)
+            if trade is not None:
+                position = handle_position(all_events[k + 1], event, trade["token"])
+                data.append([trade, position])
+                time.sleep(0.1)  # To avoid hitting rate limits
 
 
 @ray.remote
@@ -46,7 +62,6 @@ def get_trades(i, total):
         provider_index = pick_uri()
         # Building a Web3 instance
         w3 = build_web3(providers[provider_index])
-
         # Creating a GMX_V2 contract instance
         contract_abi = abi()
         contract_address = w3.to_checksum_address(
@@ -61,12 +76,8 @@ def get_trades(i, total):
             )
             try:
                 # Retrieving all entries from the event filter
-                for event in event_filter.get_all_entries():
-                    trade = handle_event(event, w3)
-                    if trade is not None:
-                        data.append(trade)
-                        # Waiting to avoid hitting rate limits
-                        time.sleep(0.1)
+                all_events = event_filter.get_all_entries()
+                process_events(all_events, data, w3)
                 add_case(provider_index, "Success")
                 j += 50000
                 break
@@ -74,7 +85,7 @@ def get_trades(i, total):
                 # Wait before retrying
                 add_case(provider_index, "Fail")
                 time.sleep(1)
-            except RequestException:
+            except HTTPError:
                 uri_not_working(provider_index)
                 break
     return data
@@ -102,9 +113,15 @@ async def get_last_updated_block():
 
 def get_latest_block():
     """Getting the latest block in the arbitrium chain"""
-    provider_url = random.choice(providers)
-    web3 = build_web3(provider_url)
-    return web3.eth.block_number
+    provider_index = pick_uri()
+    w3 = build_web3(providers[provider_index])
+    while True:
+        try:
+            block_number = w3.eth.block_number
+            add_case(provider_index, "Success")
+            return block_number
+        except HTTPError:
+            uri_not_working(provider_index)
 
 
 while True:

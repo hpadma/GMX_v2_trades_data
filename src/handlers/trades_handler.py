@@ -5,11 +5,13 @@ from prisma.errors import PrismaError
 from logger import log_message
 from prisma import Prisma
 
+from handlers.position_settled_handler import pos_settled,pos_open,pos_inc,pos_dec
+
 # Initialize Prisma client
 prisma = Prisma()
 
 
-async def counter(trade_data):
+async def counter(trade_data, transaction):
     """
     Updates and returns the position link count for each link.
     Args:
@@ -28,23 +30,23 @@ async def counter(trade_data):
             )
             new_count = pos_data.count + 1
             try:
-                await prisma.token_count.update_many(
+                await transaction.token_count.update_many(
                     where={"link": link, "token": token},
                     data={"count": new_count},
                 )
             except PrismaError:
                 data = {"link": link, "token": token, "count": new_count}
-                await prisma.token_count.create(data=data)
+                await transaction.token_count.create(data=data)
             finally:
-                await prisma.position_count.update_many(
+                await transaction.position_count.update_many(
                     where={"link": link}, data={"count": new_count}
                 )
             return new_count
         except PrismaError:
             pos_data = {"link": link, "count": 1}
             data = {"link": link, "token": token, "count": 1}
-            await prisma.token_count.create(data=data)
-            await prisma.position_count.create(data=pos_data)
+            await transaction.token_count.create(data=data)
+            await transaction.position_count.create(data=pos_data)
             return 1
     else:
         try:
@@ -62,18 +64,61 @@ async def counter(trade_data):
             return None
 
 
-async def write(trade_data):
+async def write(trade_data, transaction):
     """
     Appends a row of trade to the database.
     Args:
         trade_data: List containing trade information to be written to the database.
     """
-    link_counter = await counter(trade_data)
+    link_counter = await counter(trade_data[0], transaction)
     if link_counter is not None:
-        trade_data["link"] = (
-            "PositionLink_" + str(link_counter) + "_0x" + str(trade_data["link"])
+        trade_data[0]["link"] = (
+            "PositionLink_" + str(link_counter) + "_0x" + str(trade_data[0]["link"])
         )
-        await prisma.trade.create(data=trade_data)
+        await transaction.trade.create(data=trade_data[0])
+        if trade_data[0]["events"] in ("Close", "Liqudated"):
+            position_details = await prisma.position_unsettled.find_first_or_raise(
+                where={
+                    "link": trade_data[0]["link"],
+                }
+            )
+            settled_data = pos_settled(trade_data, position_details)
+            await transaction.position_settled.create(data=settled_data)
+            log_message(
+                "info",
+                "Position Settled for transaction hash %s and log index %s.",
+                trade_data[0]["transaction_hash"],
+                trade_data[0]["log_index"],
+            )
+        elif trade_data[0]["events"] == "Open":
+            open_data = pos_open(trade_data)
+            await transaction.position_unsettled.create(data=open_data)
+        elif trade_data[0]["events"] == "Increase":
+            pos_data = await prisma.position_unsettled.find_first_or_raise(
+                where={
+                    "link": trade_data[0]["link"],
+                }
+            )
+            unsettled_data = pos_inc(pos_data, trade_data)
+            await transaction.position_unsettled.update_many(
+                where={
+                    "link": trade_data[0]["link"],
+                },
+                data=unsettled_data,
+            )
+        else:
+            pos_data = await prisma.position_unsettled.find_first_or_raise(
+                where={
+                    "link": trade_data[0]["link"],
+                }
+            )
+            unsettled_data = pos_dec(pos_data, trade_data)
+            await transaction.position_unsettled.update_many(
+                where={
+                    "link": trade_data[0]["link"],
+                },
+                data=unsettled_data,
+            )
 
 
 async def handle_trades(all_trades, last_block):
@@ -91,32 +136,35 @@ async def handle_trades(all_trades, last_block):
                     async with prisma.tx() as transaction:
                         trade = await transaction.trade.find_many(
                             where={
-                                "transaction_hash": trade_data["transaction_hash"],
-                                "log_index": trade_data["log_index"],
+                                "transaction_hash": trade_data[0]["transaction_hash"],
+                                "log_index": trade_data[0]["log_index"],
                             }
                         )
                         if not trade:
-                            await write(trade_data)
+                            await write(trade_data, transaction)
                             log_message(
                                 "info",
                                 "Trade added successfully with data: %s.",
-                                trade_data,
+                                trade_data[0],
                             )
                         else:
                             log_message(
                                 "info",
                                 "Trade already exists for transaction hash %s and log index %s.",
-                                trade_data["transaction_hash"],
-                                trade_data["log_index"],
+                                trade_data[0]["transaction_hash"],
+                                trade_data[0]["log_index"],
                             )
+
                 except PrismaError as e:
                     log_message(
                         "error",
                         "An error occurred with transaction hash %s and log index %s: %s",
-                        trade_data["transaction_hash"],
-                        trade_data["log_index"],
+                        trade_data[0]["transaction_hash"],
+                        trade_data[0]["log_index"],
                         e,
                     )
+                    print("here")
+                    return
         await prisma.block.update_many(
             where={"id": 1}, data={"last_update": last_block}
         )
