@@ -43,6 +43,7 @@ def pos_data(event, fees, token):
         "position_fee_amount": fee_uint[24]["value"] / decimal_factor,
         "borrowing_fee_amount": fee_uint[15]["value"] / decimal_factor,
         "ui_fee_amount": fee_uint[27]["value"] / decimal_factor,
+        "total_fee_amount": fee_uint[25]["value"] / decimal_factor,
         "trader_discount": fee_uint[6]["value"] / decimal_factor,
         "it_price_max": uint_items[8]["value"] / it_decimal,
         "it_price_min": uint_items[9]["value"] / it_decimal,

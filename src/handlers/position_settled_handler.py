@@ -44,7 +44,6 @@ def pos_settled(trade_data, position_data):
         "cummulative_size_in_usd": trade_details["size_delta"],
         "cummulative_size_in_token": fees_details["cummulative_size_in_token"],
         "cummulative_collateral": trade_details["collateral_delta"],
-        "cummulative_fee": position_data.cummulative_fee + trade_details["fee"],
         "size_in_usd": trade_details["size"],
         "size_in_token": trade_details["size"],
         "collateral_in_usd": trade_details["collateral_amount"],
@@ -85,7 +84,7 @@ def pos_settled(trade_data, position_data):
         "borrowing_fee_amount": fees_details["borrowing_fee_amount"],
         "ui_fee_amount": fees_details["ui_fee_amount"],
         "trader_discount_amount": fees_details["trader_discount"],
-        "total_fee_amount": position_data.cummulative_fee + trade_details["fee"],
+        "total_fee_amount": fees_details["total_fee_amount"],
         "fees_updated_at": trade_details["timestamp"],
         "transaction_hash": trade_details["transaction_hash"],
         "log_index": trade_details["log_index"],
@@ -102,7 +101,6 @@ def pos_open(trade_data):
         Dict: Relavent information to update in database
     """
     pos_unsettled_data = {
-        "cummulative_fee": trade_data[0]["fee"],
         "max_size": trade_data[0]["size"],
         "max_collateral": trade_data[0]["collateral_amount"],
         "open_blocknumber": trade_data[0]["block_number"],
@@ -141,7 +139,6 @@ def pos_inc(position_data, trade_data):
     """
     avg_data = avg_calc(position_data, trade_data)
     pos_unsettled_data = {
-        "cummulative_fee": position_data.cummulative_fee + trade_data[0]["fee"],
         "max_size": max(position_data.max_size, trade_data[0]["size"]),
         "max_collateral": max(
             position_data.max_collateral, trade_data[0]["collateral_amount"]
@@ -170,7 +167,6 @@ def pos_dec(position_data, trade_data):
     """
     avg_data = avg_calc(position_data, trade_data)
     pos_unsettled_data = {
-        "cummulative_fee": position_data.cummulative_fee + trade_data[0]["fee"],
         "max_size": max(position_data.max_size, trade_data[0]["size"]),
         "max_collateral": max(
             position_data.max_collateral, trade_data[0]["collateral_amount"]

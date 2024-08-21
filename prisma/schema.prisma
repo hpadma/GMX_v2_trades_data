@@ -23,7 +23,6 @@ model trade{
   position_side    String
   link             String
   price            Float
-  fee              Float
   block_number     Int
   timestamp        Int
   pnl_usd          Float
@@ -51,7 +50,6 @@ model block{
 
 model position_unsettled{
   id               Int      @id @default(autoincrement())
-  cummulative_fee  Float
   max_size         Float
   max_collateral   Float
   open_blocknumber Int
@@ -99,7 +97,6 @@ model position_settled{
   cummulative_size_in_usd         Float
   cummulative_size_in_token       Float
   cummulative_collateral          Float
-  cummulative_fee                 Float
   size_in_usd                    Float
   size_in_token                  Float
   collateral_in_usd              Float
