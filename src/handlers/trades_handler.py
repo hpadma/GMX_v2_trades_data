@@ -76,7 +76,7 @@ async def write(trade_data, transaction):
             "PositionLink_" + str(link_counter) + "_0x" + str(trade_data[0]["link"])
         )
         await transaction.trade.create(data=trade_data[0])
-        if trade_data[0]["events"] in ("Close", "Liqudated"):
+        if trade_data[0]["events"] in ("Close", "Liquidated"):
             position_details = await prisma.position_unsettled.find_first_or_raise(
                 where={
                     "link": trade_data[0]["link"],
@@ -166,7 +166,7 @@ async def handle_trades(all_trades, last_block):
                     print("here")
                     return
         await prisma.block.update_many(
-            where={"id": 1}, data={"last_update": last_block}
+            where={"vid": 1}, data={"last_update": last_block}
         )
         log_message("info", "Last synced block %d", last_block - 1)
     except PrismaError as e:

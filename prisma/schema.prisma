@@ -11,7 +11,7 @@ datasource db {
 }
 
 model trade{
-  id               Int      @id @default(autoincrement())
+  vid              Int      @id @default(autoincrement())
   account          String
   events           String
   collateral_token String
@@ -31,27 +31,30 @@ model trade{
 }
 
 model token_count{
-  id               Int      @id @default(autoincrement())
+  vid              Int      @id @default(autoincrement())
   link             String
   token            String
   count            Int
 }
 
 model position_count{
-  id               Int      @id @default(autoincrement())
+  vid              Int      @id @default(autoincrement())
   link             String
   count            Int
 }
 
 model block{
-  id               Int      @id @default(autoincrement())
+  vid              Int      @id @default(autoincrement())
   last_update      Int
 }
 
 model position_unsettled{
-  id               Int      @id @default(autoincrement())
+  vid              Int      @id @default(autoincrement())
   max_size         Float
   max_collateral   Float
+  cum_size         Float
+  cum_collateral   Float
+  realised_pnl     Float
   open_blocknumber Int
   open_blocktimestamp     Int
   last_increase_timestamp Int?
@@ -76,7 +79,8 @@ model position_unsettled{
 }
 
 model position_settled{
-  id               Int      @id @default(autoincrement())
+  vid               Int      @id @default(autoincrement())
+  id               String
   link             String
   account          String
   collateral_token String
@@ -95,7 +99,6 @@ model position_settled{
   collateral_token_gmx_decimal   Int
   collateral_token_decimal       Int
   cummulative_size_in_usd         Float
-  cummulative_size_in_token       Float
   cummulative_collateral          Float
   size_in_usd                    Float
   size_in_token                  Float
@@ -122,9 +125,7 @@ model position_settled{
   average_close_price            Float
   settled_price                  Float
   is_liquidated                  Boolean
-  price_impact_usd               Float
-  base_pnl_usd                   Float
-  uncapped_base_pnl_usd          Float
+  realised_pnl                   Float
   index_token_price_max          Float
   index_token_price_min          Float
   collateral_token_price_max     Float

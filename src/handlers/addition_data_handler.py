@@ -17,7 +17,6 @@ def pos_data(event, fees, token):
     address_items = data["addressItems"]["items"]
     uint_items = data["uintItems"]["items"]
     bytes32_items = data["bytes32Items"]["items"]
-    int_items = data["intItems"]["items"]
     fee_uint = fee["uintItems"]["items"]
 
     if token == "WBTC":
@@ -35,10 +34,6 @@ def pos_data(event, fees, token):
     additional_data = {
         "market_token": address_items[1]["value"],
         "key": bytes32_items[1]["value"].hex(),
-        "cummulative_size_in_token": uint_items[13]["value"] / decimal_factor,
-        "price_impact": int_items[0]["value"] / 1e30,
-        "base_pnl": int_items[1]["value"] / 1e30,
-        "uncapped_base_pnl": int_items[2]["value"] / 1e30,
         "funding_fee_amount": fee_uint[8]["value"] / decimal_factor,
         "position_fee_amount": fee_uint[24]["value"] / decimal_factor,
         "borrowing_fee_amount": fee_uint[15]["value"] / decimal_factor,

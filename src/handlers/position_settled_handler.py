@@ -24,6 +24,7 @@ def pos_settled(trade_data, position_data):
     else:
         ct_decimal = 6
     pos_settled_data = {
+        "id": trade_details["transaction_hash"] + "_" + str(trade_details["log_index"]),
         "link": trade_details["link"],
         "account": trade_details["account"],
         "collateral_token": trade_details["collateral_token"],
@@ -32,7 +33,7 @@ def pos_settled(trade_data, position_data):
         "long_token": trade_details["token"],
         "short_token": "USDC",
         "position_side": trade_details["position_side"],
-        "key": fees_details["key"],
+        "key": "0x" + fees_details["key"],
         "index_token_decimal": decimal,
         "long_token_decimal": decimal,
         "short_token_decimal": 6,
@@ -41,9 +42,8 @@ def pos_settled(trade_data, position_data):
         "short_token_gmx_decimal": 24,
         "collateral_token_gmx_decimal": 30 - ct_decimal,
         "collateral_token_decimal": ct_decimal,
-        "cummulative_size_in_usd": trade_details["size_delta"],
-        "cummulative_size_in_token": fees_details["cummulative_size_in_token"],
-        "cummulative_collateral": trade_details["collateral_delta"],
+        "cummulative_size_in_usd": position_data.cum_size,
+        "cummulative_collateral": position_data.cum_collateral,
         "size_in_usd": trade_details["size"],
         "size_in_token": trade_details["size"],
         "collateral_in_usd": trade_details["collateral_amount"],
@@ -56,7 +56,7 @@ def pos_settled(trade_data, position_data):
         "last_increased_timestamp": position_data.last_increase_timestamp,
         "last_decreased_timestamp": position_data.last_decrease_timestamp,
         "number_of_increase": position_data.number_of_increase,
-        "number_of_decrease": position_data.number_of_decrease,
+        "number_of_decrease": position_data.number_of_decrease + 1,
         "last_decreased_index_token_price_min": position_data.last_decreased_index_token_price_min,
         "last_decreased_index_token_price_max": position_data.last_decreased_index_token_price_max,
         "last_increased_index_token_price_min": position_data.last_increased_index_token_price_min,
@@ -68,10 +68,8 @@ def pos_settled(trade_data, position_data):
         "average_open_price": position_data.average_open_price,
         "average_close_price": avg_data[1],
         "settled_price": trade_details["price"],
-        "is_liquidated": trade_details["position_side"] == "Liqudation",
-        "price_impact_usd": fees_details["price_impact"],
-        "base_pnl_usd": fees_details["base_pnl"],
-        "uncapped_base_pnl_usd": fees_details["uncapped_base_pnl"],
+        "is_liquidated": trade_details["events"] == "Liquidated",
+        "realised_pnl": position_data.realised_pnl + trade_data[0]["pnl_usd"],
         "index_token_price_max": fees_details["it_price_max"],
         "index_token_price_min": fees_details["it_price_min"],
         "collateral_token_price_max": fees_details["ct_price_max"],
@@ -103,11 +101,13 @@ def pos_open(trade_data):
     pos_unsettled_data = {
         "max_size": trade_data[0]["size"],
         "max_collateral": trade_data[0]["collateral_amount"],
+        "cum_size": trade_data[0]["size"],
+        "cum_collateral": trade_data[0]["collateral_amount"],
         "open_blocknumber": trade_data[0]["block_number"],
         "open_blocktimestamp": trade_data[0]["timestamp"],
         "last_increase_timestamp": None,
         "last_decrease_timestamp": None,
-        "number_of_increase": 0,
+        "number_of_increase": 1,
         "number_of_decrease": 0,
         "size_of_increase": trade_data[0]["size"],
         "average_open_price": trade_data[0]["price"],
@@ -124,6 +124,7 @@ def pos_open(trade_data):
         "index_token_open_price_min": trade_data[1]["it_price_min"],
         "index_token_open_price_max": trade_data[1]["it_price_max"],
         "link": trade_data[0]["link"],
+        "realised_pnl": 0,
     }
     return pos_unsettled_data
 
@@ -143,6 +144,9 @@ def pos_inc(position_data, trade_data):
         "max_collateral": max(
             position_data.max_collateral, trade_data[0]["collateral_amount"]
         ),
+        "cum_size": position_data.cum_size + trade_data[0]["size_delta"],
+        "cum_collateral": position_data.cum_collateral
+        + trade_data[0]["collateral_delta"],
         "last_increase_timestamp": trade_data[0]["timestamp"],
         "number_of_increase": position_data.number_of_increase + 1,
         "size_of_increase": avg_data[0],
@@ -180,5 +184,6 @@ def pos_dec(position_data, trade_data):
         "last_decreased_collateral_token_price_min": trade_data[1]["ct_price_min"],
         "last_decreased_collateral_token_price_max": trade_data[1]["ct_price_max"],
         "link": trade_data[0]["link"],
+        "realised_pnl": position_data.realised_pnl + trade_data[0]["pnl_usd"],
     }
     return pos_unsettled_data

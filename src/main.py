@@ -1,6 +1,7 @@
 """Module for listening and handling of trades from GMX_v2"""
 
 import asyncio
+import os
 import time
 
 import ray
@@ -27,6 +28,26 @@ ray.init()
 
 # Initialize Prisma client
 prisma = Prisma()
+
+
+def validate_positive_integer(name, max_value=None):
+    """Validate that a value is a positive integer with optional maximum value."""
+    value = os.getenv(name)
+    try:
+        int_value = int(value)
+        if int_value <= 0:
+            raise ValueError(f"{name} must be a positive integer.")
+        if max_value is not None and int_value > max_value:
+            raise ValueError(f"{name} must be less than or equal to {max_value}.")
+        return int_value
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer.") from exc
+
+
+# Retrieve and validate environment variables
+parallel_tasks = validate_positive_integer("PARALLEL_TASKS", max_value=6)
+blocks_per_run = validate_positive_integer("BLOCKS_PER_RUN")
+blocks_per_call = validate_positive_integer("BLOCKS_PER_CALL", max_value=50000)
 
 
 def process_events(all_events, data, w3):
@@ -72,14 +93,14 @@ def get_trades(i, total):
         while True:
             # Creating a filter to fetch events in the specified block range
             event_filter = contract.events.EventLog1.create_filter(
-                fromBlock=j, toBlock=j + 49999
+                fromBlock=j, toBlock=j + blocks_per_call - 1
             )
             try:
                 # Retrieving all entries from the event filter
                 all_events = event_filter.get_all_entries()
                 process_events(all_events, data, w3)
                 add_case(provider_index, "Success")
-                j += 50000
+                j += blocks_per_call
                 break
             except ValueError:
                 # Wait before retrying
@@ -103,7 +124,7 @@ async def get_last_updated_block():
         if last_trade is not None:
             last_update_block = max(last_update.last_update, last_trade.block_number)
             await prisma.block.update_many(
-                where={"id": 1}, data={"last_update": last_update_block}
+                where={"vid": 1}, data={"last_update": last_update_block}
             )
         else:
             last_update_block = 110856764
@@ -129,16 +150,20 @@ while True:
     to_block = get_latest_block()
     total_blocks = to_block - from_block
     # Creating remote tasks for each chunk
-    if total_blocks >= 3000000:
+    if total_blocks >= blocks_per_run:
         tasks = [
-            get_trades.remote(x, 500000)
-            for x in range(from_block, from_block + 3000000, 500000)
+            get_trades.remote(x, int(blocks_per_run / parallel_tasks))
+            for x in range(
+                from_block,
+                from_block + blocks_per_run,
+                int(blocks_per_run / parallel_tasks),
+            )
         ]
-        last_block = from_block + 3000000
+        last_block = from_block + blocks_per_run
     else:
         tasks = [
-            get_trades.remote(x, int(total_blocks / 6))
-            for x in range(from_block, to_block, int(total_blocks / 6))
+            get_trades.remote(x, int(total_blocks / parallel_tasks))
+            for x in range(from_block, to_block, int(total_blocks / parallel_tasks))
         ]
         last_block = to_block
 
