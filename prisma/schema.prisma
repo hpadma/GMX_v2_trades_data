@@ -61,8 +61,6 @@ model position_unsettled{
   last_decrease_timestamp Int?
   number_of_increase      Int
   number_of_decrease      Int
-  size_of_increase        Float?
-  average_open_price      Float?
   size_of_decrease        Float?
   average_close_price     Float?
   last_decreased_index_token_price_min      Float?
@@ -126,6 +124,7 @@ model position_settled{
   settled_price                  Float
   is_liquidated                  Boolean
   realised_pnl                   Float
+  roi                            Float
   index_token_price_max          Float
   index_token_price_min          Float
   collateral_token_price_max     Float

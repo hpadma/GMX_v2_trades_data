@@ -10,22 +10,13 @@ def avg_calc(position_data, trade_data):
     Returns:
         Updated size and average
     """
-    if trade_data[0]["events"] == "Increase":
-        cumulative = (
-            position_data.size_of_increase * position_data.average_open_price
-            + trade_data[0]["price"] * trade_data[0]["size"]
-        )
-        position_data.size_of_increase += trade_data[0]["size"]
-        avg = cumulative / position_data.size_of_increase
-        return position_data.size_of_increase, avg
-
     if not position_data.size_of_decrease:
-        return [trade_data[0]["size"], trade_data[0]["price"]]
+        return trade_data[1]["size_delta_token"], trade_data[0]["price"]
 
     cumulative = (
         position_data.size_of_decrease * position_data.average_close_price
-        + trade_data[0]["price"] * trade_data[0]["size"]
+        + trade_data[0]["price"] * trade_data[1]["size_delta_token"]
     )
-    position_data.size_of_decrease += trade_data[0]["size"]
+    position_data.size_of_decrease += trade_data[1]["size_delta_token"]
     avg = cumulative / position_data.size_of_decrease
     return position_data.size_of_decrease, avg

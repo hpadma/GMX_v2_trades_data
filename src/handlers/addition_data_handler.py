@@ -34,6 +34,7 @@ def pos_data(event, fees, token):
     additional_data = {
         "market_token": address_items[1]["value"],
         "key": bytes32_items[1]["value"].hex(),
+        "size_delta_token": uint_items[13]["value"]/decimal_factor,
         "funding_fee_amount": fee_uint[8]["value"] / decimal_factor,
         "position_fee_amount": fee_uint[24]["value"] / decimal_factor,
         "borrowing_fee_amount": fee_uint[15]["value"] / decimal_factor,

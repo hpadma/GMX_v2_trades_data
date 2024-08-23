@@ -13,7 +13,7 @@ def pos_settled(trade_data, position_data):
         Dict: Relavent information to update in database
     """
     trade_details = trade_data[0]
-    fees_details = trade_data[1]
+    additional_details = trade_data[1]
     avg_data = avg_calc(position_data, trade_data)
     if trade_details["token"] == "WBTC":
         decimal = 8
@@ -28,12 +28,12 @@ def pos_settled(trade_data, position_data):
         "link": trade_details["link"],
         "account": trade_details["account"],
         "collateral_token": trade_details["collateral_token"],
-        "market_token": fees_details["market_token"],
+        "market_token": additional_details["market_token"],
         "token": trade_details["token"],
         "long_token": trade_details["token"],
         "short_token": "USDC",
         "position_side": trade_details["position_side"],
-        "key": "0x" + fees_details["key"],
+        "key": "0x" + additional_details["key"],
         "index_token_decimal": decimal,
         "long_token_decimal": decimal,
         "short_token_decimal": 6,
@@ -65,24 +65,25 @@ def pos_settled(trade_data, position_data):
         "last_decreased_collateral_token_price_max": position_data.last_decreased_collateral_token_price_max,
         "last_increased_collateral_token_price_min": position_data.last_increased_collateral_token_price_min,
         "last_increased_collateral_token_price_max": position_data.last_increased_collateral_token_price_max,
-        "average_open_price": position_data.average_open_price,
+        "average_open_price": trade_details["size_delta"]/additional_details["size_delta_token"],
         "average_close_price": avg_data[1],
         "settled_price": trade_details["price"],
         "is_liquidated": trade_details["events"] == "Liquidated",
         "realised_pnl": position_data.realised_pnl + trade_data[0]["pnl_usd"],
-        "index_token_price_max": fees_details["it_price_max"],
-        "index_token_price_min": fees_details["it_price_min"],
-        "collateral_token_price_max": fees_details["ct_price_max"],
-        "collateral_token_price_min": fees_details["ct_price_min"],
+        "roi": (position_data.realised_pnl + trade_data[0]["pnl_usd"])/position_data.max_collateral*100,
+        "index_token_price_max": additional_details["it_price_max"],
+        "index_token_price_min": additional_details["it_price_min"],
+        "collateral_token_price_max": additional_details["ct_price_max"],
+        "collateral_token_price_min": additional_details["ct_price_min"],
         "index_token_open_price_min": position_data.index_token_open_price_min,
         "index_token_open_price_max": position_data.index_token_open_price_max,
         "size_updated_at": trade_details["timestamp"],
-        "funding_fee_amount": fees_details["funding_fee_amount"],
-        "position_fee_amount": fees_details["position_fee_amount"],
-        "borrowing_fee_amount": fees_details["borrowing_fee_amount"],
-        "ui_fee_amount": fees_details["ui_fee_amount"],
-        "trader_discount_amount": fees_details["trader_discount"],
-        "total_fee_amount": fees_details["total_fee_amount"],
+        "funding_fee_amount": additional_details["funding_fee_amount"],
+        "position_fee_amount": additional_details["position_fee_amount"],
+        "borrowing_fee_amount": additional_details["borrowing_fee_amount"],
+        "ui_fee_amount": additional_details["ui_fee_amount"],
+        "trader_discount_amount": additional_details["trader_discount"],
+        "total_fee_amount": additional_details["total_fee_amount"],
         "fees_updated_at": trade_details["timestamp"],
         "transaction_hash": trade_details["transaction_hash"],
         "log_index": trade_details["log_index"],
@@ -109,8 +110,6 @@ def pos_open(trade_data):
         "last_decrease_timestamp": None,
         "number_of_increase": 1,
         "number_of_decrease": 0,
-        "size_of_increase": trade_data[0]["size"],
-        "average_open_price": trade_data[0]["price"],
         "size_of_decrease": None,
         "average_close_price": None,
         "last_decreased_index_token_price_min": None,
@@ -138,7 +137,6 @@ def pos_inc(position_data, trade_data):
     Return:
         Dict: Relavent information to update in database
     """
-    avg_data = avg_calc(position_data, trade_data)
     pos_unsettled_data = {
         "max_size": max(position_data.max_size, trade_data[0]["size"]),
         "max_collateral": max(
@@ -149,8 +147,6 @@ def pos_inc(position_data, trade_data):
         + trade_data[0]["collateral_delta"],
         "last_increase_timestamp": trade_data[0]["timestamp"],
         "number_of_increase": position_data.number_of_increase + 1,
-        "size_of_increase": avg_data[0],
-        "average_open_price": avg_data[1],
         "last_increased_index_token_price_min": trade_data[1]["it_price_min"],
         "last_increased_index_token_price_max": trade_data[1]["it_price_max"],
         "last_increased_collateral_token_price_min": trade_data[1]["ct_price_min"],
