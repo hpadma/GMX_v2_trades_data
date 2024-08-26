@@ -3,6 +3,7 @@ generator client {
   provider = "prisma-client-py"
   interface = "asyncio"
   recursive_type_depth = 5
+  enable_experimental_decimal = true
 }
 
 datasource db {
@@ -28,6 +29,8 @@ model trade{
   pnl_usd          Float
   transaction_hash String
   log_index        Int
+  long_oi          Decimal  @db.Decimal(14, 4)
+  short_oi         Decimal  @db.Decimal(14, 4)
 }
 
 model token_count{
@@ -141,4 +144,11 @@ model position_settled{
   fees_updated_at                Int
   transaction_hash               String
   log_index                      Int
+}
+
+model open_interest{
+  vid              Int      @id @default(autoincrement())
+  token            String
+  long_oi          Decimal  @db.Decimal(14, 4)
+  short_oi         Decimal  @db.Decimal(14, 4)
 }

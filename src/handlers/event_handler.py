@@ -55,6 +55,8 @@ def pos_increase(event, timestamp, eventname):
         "transaction_hash": event["transactionHash"].hex(),
         "log_index": event["logIndex"],
         "pnl_usd": 0,
+        "long_oi": 0,
+        "short_oi": 0,
     }
 
     return trade_event
@@ -105,6 +107,8 @@ def pos_decrease(event, timestamp, eventname):
         "transaction_hash": event["transactionHash"].hex(),
         "log_index": event["logIndex"],
         "pnl_usd": int_items[1]["value"] / 1e30,
+        "long_oi": 0,
+        "short_oi": 0,
     }
 
     return trade_event
@@ -153,6 +157,8 @@ def liquidated(event, timestamp):
         "transaction_hash": event["transactionHash"].hex(),
         "log_index": event["logIndex"],
         "pnl_usd": int_items[1]["value"] / 1e30,
+        "long_oi": 0,
+        "short_oi": 0,
     }
 
     return trade_event

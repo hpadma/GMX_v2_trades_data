@@ -5,7 +5,7 @@ import os
 import time
 
 import ray
-from requests.exceptions import HTTPError
+from requests.exceptions import HTTPError, ReadTimeout
 
 from contract_abi import abi
 from handlers.addition_data_handler import handle_position
@@ -107,6 +107,9 @@ def get_trades(i, total):
                 add_case(provider_index, "Fail")
                 time.sleep(1)
             except HTTPError:
+                uri_not_working(provider_index)
+                break
+            except ReadTimeout:
                 uri_not_working(provider_index)
                 break
     return data

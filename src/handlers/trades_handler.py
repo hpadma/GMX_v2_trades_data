@@ -1,11 +1,12 @@
 """Module for handling the trades and writing into database"""
 
+from decimal import Decimal
 from prisma.errors import PrismaError
 
 from logger import log_message
 from prisma import Prisma
 
-from handlers.position_settled_handler import pos_settled,pos_open,pos_inc,pos_dec
+from handlers.position_settled_handler import pos_settled, pos_open, pos_inc, pos_dec
 
 # Initialize Prisma client
 prisma = Prisma()
@@ -75,7 +76,24 @@ async def write(trade_data, transaction):
         trade_data[0]["link"] = (
             "PositionLink_" + str(link_counter) + "_0x" + str(trade_data[0]["link"])
         )
-        await transaction.trade.create(data=trade_data[0])
+        try:
+            open_interest = await prisma.open_interest.find_first_or_raise(
+                where={
+                    "token": trade_data[0]["token"],
+                }
+            )
+        except PrismaError:
+            data = {
+                "token": trade_data[0]["token"],
+                "long_oi": 0,
+                "short_oi": 0,
+            }
+            await prisma.open_interest.create(data=data)
+            open_interest = await prisma.open_interest.find_first_or_raise(
+                where={
+                    "token": trade_data[0]["token"],
+                }
+            )
         if trade_data[0]["events"] in ("Close", "Liquidated"):
             position_details = await prisma.position_unsettled.find_first_or_raise(
                 where={
@@ -84,6 +102,10 @@ async def write(trade_data, transaction):
             )
             settled_data = pos_settled(trade_data, position_details)
             await transaction.position_settled.create(data=settled_data)
+            if trade_data[0]["position_side"] == "LONG":
+                open_interest.long_oi -= Decimal(Decimal(trade_data[0]["size_delta"]))
+            else:
+                open_interest.short_oi -= Decimal(Decimal(trade_data[0]["size_delta"]))
             log_message(
                 "info",
                 "Position Settled for transaction hash %s and log index %s.",
@@ -93,6 +115,10 @@ async def write(trade_data, transaction):
         elif trade_data[0]["events"] == "Open":
             open_data = pos_open(trade_data)
             await transaction.position_unsettled.create(data=open_data)
+            if trade_data[0]["position_side"] == "LONG":
+                open_interest.long_oi += Decimal(trade_data[0]["size_delta"])
+            else:
+                open_interest.short_oi += Decimal(trade_data[0]["size_delta"])
         elif trade_data[0]["events"] == "Increase":
             pos_data = await prisma.position_unsettled.find_first_or_raise(
                 where={
@@ -106,6 +132,10 @@ async def write(trade_data, transaction):
                 },
                 data=unsettled_data,
             )
+            if trade_data[0]["position_side"] == "LONG":
+                open_interest.long_oi += Decimal(trade_data[0]["size_delta"])
+            else:
+                open_interest.short_oi += Decimal(trade_data[0]["size_delta"])
         else:
             pos_data = await prisma.position_unsettled.find_first_or_raise(
                 where={
@@ -119,6 +149,22 @@ async def write(trade_data, transaction):
                 },
                 data=unsettled_data,
             )
+            if trade_data[0]["position_side"] == "LONG":
+                open_interest.long_oi -= Decimal(trade_data[0]["size_delta"])
+            else:
+                open_interest.short_oi -= Decimal(trade_data[0]["size_delta"])
+        await transaction.open_interest.update_many(
+            where={
+                "token": trade_data[0]["token"],
+            },
+            data={
+                "long_oi": open_interest.long_oi,
+                "short_oi": open_interest.short_oi,
+            },
+        )
+        trade_data[0]["long_oi"] = open_interest.long_oi
+        trade_data[0]["short_oi"] = open_interest.short_oi
+        await transaction.trade.create(data=trade_data[0])
 
 
 async def handle_trades(all_trades, last_block):
@@ -163,7 +209,6 @@ async def handle_trades(all_trades, last_block):
                         trade_data[0]["log_index"],
                         e,
                     )
-                    print("here")
                     return
         await prisma.block.update_many(
             where={"vid": 1}, data={"last_update": last_block}
