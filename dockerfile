@@ -16,4 +16,6 @@ RUN poetry config virtualenvs.create false && poetry install --no-root
 
 COPY . /app/
 
-CMD ["sh", "-c", "prisma db push && prisma generate && python3.9 src/main.py"]
+RUN chmod +rwx /app/wrapper_script.sh
+
+CMD ["/app/wrapper_script.sh"]

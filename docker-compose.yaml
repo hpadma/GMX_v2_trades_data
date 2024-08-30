@@ -26,7 +26,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://deq:hello@db:5432/tradesdb"
     ports:
-      - "5000:5000"
+      - "5000:5000" #for web3
+      - "8000:8000" #for fastapi
 
 volumes:
   postgres_data:
